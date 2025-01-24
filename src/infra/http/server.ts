@@ -1,12 +1,16 @@
 import { fastify } from 'fastify'
+import { fastifyMultipart } from '@fastify/multipart'
+import fastifySwagger from '@fastify/swagger'
 import { fastifyCors } from '@fastify/cors'
 import { env } from '@/env'
 import {
   hasZodFastifySchemaValidationErrors,
+  jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod'
 import { uploadImageRoute } from './routes/upload-image'
+import fastifySwaggerUi from '@fastify/swagger-ui'
 
 const server = fastify()
 
@@ -24,6 +28,20 @@ server.setErrorHandler((error, request, reply) => {
   }
 
   return reply.status(500).send({ message: 'Internal server error' })
+})
+
+server.register(fastifyMultipart)
+server.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: 'Upload Server',
+      version: '1.0.0',
+    },
+  },
+  transform: jsonSchemaTransform,
+})
+server.register(fastifySwaggerUi, {
+  routePrefix: '/docs',
 })
 
 server.register(uploadImageRoute)
