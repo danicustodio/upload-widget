@@ -1,6 +1,5 @@
 import { Readable } from 'node:stream'
-import { db } from '@/infra/db'
-import { schema } from '@/infra/db/schemas'
+import { DrizzleUploadRepository } from '@/infra/repositories/drizzle-upload-repository'
 import { type Either, makeLeft, makeRight } from '@/shared/either'
 import { z } from 'zod'
 import { InvalidFileFormat } from './errors/invalid-file-format'
@@ -24,7 +23,10 @@ export async function uploadImage(
     return makeLeft(new InvalidFileFormat())
   }
 
-  await db.insert(schema.uploads).values({
+  // TODO: upload image to cloudfare r2
+  const repository = new DrizzleUploadRepository()
+
+  await repository.insert({
     name: fileName,
     remoteKey: fileName,
     remoteUrl: fileName,
