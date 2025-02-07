@@ -16,6 +16,15 @@ describe('Upload Image', () => {
         }),
       }
     })
+
+    vi.mock('@/infra/storage/upload-to-storage', () => {
+      return {
+        uploadToStorage: vi.fn().mockResolvedValue({
+          key: `${randomUUID()}.jpeg`,
+          url: `https://storage.com/${randomUUID()}.jpeg`,
+        }),
+      }
+    })
   })
 
   it('should upload an image', async () => {

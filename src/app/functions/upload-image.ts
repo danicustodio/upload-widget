@@ -2,6 +2,7 @@ import { Readable } from 'node:stream'
 import { DrizzleUploadRepository } from '@/infra/repositories/drizzle-upload-repository'
 import { type Either, makeLeft, makeRight } from '@/shared/either'
 import { z } from 'zod'
+import { uploadToStorage } from '../../infra/storage/upload-to-storage'
 import { InvalidFileFormat } from './errors/invalid-file-format'
 
 const uploadImageInput = z.object({
@@ -17,20 +18,26 @@ const allowedMimeTypes = ['image/jpg', 'image/jpeg', 'image/png', 'image/webp']
 export async function uploadImage(
   input: UploadImageInput
 ): Promise<Either<InvalidFileFormat, { url: string }>> {
-  const { contentType, fileName } = uploadImageInput.parse(input)
+  const { contentType, fileName, contentStream } = uploadImageInput.parse(input)
 
   if (!allowedMimeTypes.includes(contentType)) {
     return makeLeft(new InvalidFileFormat())
   }
 
-  // TODO: upload image to cloudfare r2
+  const { key, url } = await uploadToStorage({
+    folder: 'images',
+    fileName,
+    contentType,
+    contentStream,
+  })
+
   const repository = new DrizzleUploadRepository()
 
   await repository.insert({
     name: fileName,
-    remoteKey: fileName,
-    remoteUrl: fileName,
+    remoteKey: key,
+    remoteUrl: url,
   })
 
-  return makeRight({ url: '' })
+  return makeRight({ url })
 }
